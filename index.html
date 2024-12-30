@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>LevCoin Missed Profits</title>
   <style>
-    /* Make the background fill the entire viewport */
+    /* Full-screen background settings */
     html, body {
       margin: 0;
       padding: 0;
@@ -14,14 +14,14 @@
       color: #fff;
     }
 
-    /* Full-screen background image */
+    /* Background image setup */
     body {
       background: url("./levcoinphoto_2024-12-30_11-34-31.jpeg") no-repeat center center;
       background-size: cover;
       background-position: center;
       background-attachment: fixed;
 
-      /* Center children vertically & horizontally */
+      /* Center the content */
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -29,21 +29,35 @@
       text-align: center;
     }
 
+    /* Box styling */
     .overlay {
-      background-color: rgba(0, 0, 0, 0.5);
+      background-color: rgba(0, 0, 0, 0.7); /* Slightly darker background for clarity */
       padding: 30px 40px;
       border-radius: 10px;
       max-width: 500px;
+      border: 2px solid #4caf50; /* Slight green border for style */
     }
 
-    /* So line breaks in textContent show up nicely */
-    .overlay pre {
-      white-space: pre-line;
-      margin: 0;
+    /* Styling for DEV RUGGED text */
+    .rugged {
+      font-size: 1.5rem;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+
+    /* Styling for Missed Profits */
+    .missed-profits {
       font-size: 1.3rem;
+      margin-top: 10px;
     }
 
-    /* Shake animation keyframes */
+    /* Make the dollar amount green */
+    .profit-amount {
+      color: #4caf50; /* Green color for profits */
+      font-weight: bold;
+    }
+
+    /* Shake animation */
     @keyframes shake {
       0%   { transform: translate(0, 0); }
       20%  { transform: translate(-2px, 0); }
@@ -53,7 +67,7 @@
       100% { transform: translate(0, 0); }
     }
 
-    /* Class that triggers the shake */
+    /* Shake class */
     .shake {
       animation: shake 0.3s ease-in-out;
     }
@@ -62,22 +76,23 @@
 <body>
 
   <div class="overlay" id="overlay">
-    <pre id="missed-revenue">Loading missed revenue...</pre>
+    <div class="rugged">DEV RUGGED AND ONLY MADE $7</div>
+    <div class="missed-profits">Missed Profits: <span class="profit-amount" id="profit-amount">$0</span></div>
   </div>
 
   <script>
-    // The dev had 51,100,000 tokens, but only made $7
-    const devTokenAmount = 51_100_000;
-    const devRugProceeds = 7;
-
-    // DexScreener pair address (the liquidity pool)
-    // Example: 57kbsu4Uj6KazfYVKDhyexDcLvovzxXVHpRsJXJm7weQ
-    // Adjust if you have a different valid pair address
+    // Constants
+    const devTokenAmount = 51_100_000; // Tokens the dev had
+    const devRugProceeds = 7; // Dollars dev actually made
     const dexUrl = "https://api.dexscreener.com/latest/dex/pairs/solana/57kbsu4Uj6KazfYVKDhyexDcLvovzxXVHpRsJXJm7weQ";
 
-    const missedRevenueEl = document.getElementById("missed-revenue");
+    // DOM Elements
+    const profitAmountEl = document.getElementById("profit-amount");
     const overlayEl = document.getElementById("overlay");
 
+    /**
+     * Fetch price data from DexScreener
+     */
     async function fetchPrice() {
       try {
         const response = await fetch(dexUrl);
@@ -87,38 +102,40 @@
         const data = await response.json();
         console.log("DexScreener response:", data);
 
-        // DexScreener might return data in data.pairs[0] or data.pair
+        // Check both possible structures
         const priceUsd = data?.pairs?.[0]?.priceUsd || data?.pair?.priceUsd;
         if (!priceUsd) {
-          throw new Error("priceUsd not found in DexScreener response.");
+          throw new Error("Price not found in DexScreener response.");
         }
 
         return parseFloat(priceUsd);
       } catch (error) {
         console.error("Failed to fetch price:", error);
-        missedRevenueEl.textContent = "Error fetching Dex price.";
+        profitAmountEl.textContent = "Error fetching price.";
         return null;
       }
     }
 
+    /**
+     * Calculate missed revenue
+     */
     function calculateMissedRevenue(price) {
-      // Price * tokens = total potential
       const totalValue = price * devTokenAmount;
-      // Missed revenue = totalValue - devRugProceeds
       return totalValue - devRugProceeds;
     }
 
+    /**
+     * Update the missed profits display
+     */
     async function updateMissedRevenue() {
       const price = await fetchPrice();
       if (price !== null) {
         const missed = calculateMissedRevenue(price);
-        // All caps, bold for the dev message
-        // Then "Missed Profits: $xxxx" on the next line
-        missedRevenueEl.textContent =
-          `\u001b[1mDEV RUGGED AND ONLY MADE $${devRugProceeds}\u001b[0m\n` +
-          `Missed Profits: $${missed.toLocaleString()}`;
 
-        // Add shake class for 0.3s
+        // Update the profit text
+        profitAmountEl.textContent = `$${missed.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+
+        // Trigger shake animation
         overlayEl.classList.add('shake');
         setTimeout(() => {
           overlayEl.classList.remove('shake');
@@ -126,10 +143,10 @@
       }
     }
 
-    // Fetch immediately
+    // Initial fetch
     updateMissedRevenue();
 
-    // Update every 5 seconds
+    // Refresh every 5 seconds
     setInterval(updateMissedRevenue, 5000);
   </script>
 </body>
