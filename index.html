@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>LevCoin Missed Revenue</title>
+  <title>LevCoin Missed Profits</title>
   <style>
     /* Make the background fill the entire viewport */
     html, body {
@@ -14,9 +14,7 @@
       color: #fff;
     }
 
-    /* Full-screen background image:
-       Make sure the JPEG file is in the same folder, spelled exactly!
-       If you have it in a subfolder, adjust the path accordingly (e.g., 'images/...'). */
+    /* Full-screen background image */
     body {
       background: url("./levcoinphoto_2024-12-30_11-34-31.jpeg") no-repeat center center;
       background-size: cover;
@@ -36,14 +34,28 @@
       padding: 30px 40px;
       border-radius: 10px;
       max-width: 500px;
-      /* Optional if you want it to align strictly in the center */
-      margin: 0 auto;
     }
 
+    /* So line breaks in textContent show up nicely */
     .overlay pre {
       white-space: pre-line;
       margin: 0;
       font-size: 1.3rem;
+    }
+
+    /* Shake animation keyframes */
+    @keyframes shake {
+      0%   { transform: translate(0, 0); }
+      20%  { transform: translate(-2px, 0); }
+      40%  { transform: translate(2px, 0); }
+      60%  { transform: translate(-2px, 0); }
+      80%  { transform: translate(2px, 0); }
+      100% { transform: translate(0, 0); }
+    }
+
+    /* Class that triggers the shake */
+    .shake {
+      animation: shake 0.3s ease-in-out;
     }
   </style>
 </head>
@@ -54,15 +66,17 @@
   </div>
 
   <script>
-    // The dev had 51,100,000 tokens, only made $7
+    // The dev had 51,100,000 tokens, but only made $7
     const devTokenAmount = 51_100_000;
     const devRugProceeds = 7;
 
-    // DexScreener endpoint for your token pair on Solana
-    // Based on your comment, this endpoint "worked" for you:
+    // DexScreener pair address (the liquidity pool)
+    // Example: 57kbsu4Uj6KazfYVKDhyexDcLvovzxXVHpRsJXJm7weQ
+    // Adjust if you have a different valid pair address
     const dexUrl = "https://api.dexscreener.com/latest/dex/pairs/solana/57kbsu4Uj6KazfYVKDhyexDcLvovzxXVHpRsJXJm7weQ";
 
     const missedRevenueEl = document.getElementById("missed-revenue");
+    const overlayEl = document.getElementById("overlay");
 
     async function fetchPrice() {
       try {
@@ -73,35 +87,10 @@
         const data = await response.json();
         console.log("DexScreener response:", data);
 
-        /* 
-          Check the actual structure in your console (F12 -> Console).
-          DexScreener often returns something like:
-            {
-              "pairs": [
-                {
-                  "priceUsd": "0.00001234",
-                  ...
-                }
-              ]
-            }
-          OR it might return:
-            {
-              "pair": {
-                "priceUsd": "0.00001234",
-                ...
-              }
-            }
-
-          If it's in data.pairs[0].priceUsd, use that. If it's in data.pair.priceUsd, use that.
-        */
-
-        // Try "pairs" first:
-        const priceUsd = data?.pairs?.[0]?.priceUsd
-          // fallback if not found in pairs:
-          || data?.pair?.priceUsd;
-
+        // DexScreener might return data in data.pairs[0] or data.pair
+        const priceUsd = data?.pairs?.[0]?.priceUsd || data?.pair?.priceUsd;
         if (!priceUsd) {
-          throw new Error("priceUsd not found in DexScreener response. Check console log for structure!");
+          throw new Error("priceUsd not found in DexScreener response.");
         }
 
         return parseFloat(priceUsd);
@@ -123,17 +112,25 @@
       const price = await fetchPrice();
       if (price !== null) {
         const missed = calculateMissedRevenue(price);
-        // Show dev's $7 and the missed profit
+        // All caps, bold for the dev message
+        // Then "Missed Profits: $xxxx" on the next line
         missedRevenueEl.textContent =
-          `Dev Rugged and Only Made $${devRugProceeds}\n` +
-          `missed profit: $${missed.toLocaleString()}`;
+          `\u001b[1mDEV RUGGED AND ONLY MADE $${devRugProceeds}\u001b[0m\n` +
+          `Missed Profits: $${missed.toLocaleString()}`;
+
+        // Add shake class for 0.3s
+        overlayEl.classList.add('shake');
+        setTimeout(() => {
+          overlayEl.classList.remove('shake');
+        }, 300);
       }
     }
 
     // Fetch immediately
     updateMissedRevenue();
-    // Update every 10 seconds
-    setInterval(updateMissedRevenue, 10000);
+
+    // Update every 5 seconds
+    setInterval(updateMissedRevenue, 5000);
   </script>
 </body>
 </html>
