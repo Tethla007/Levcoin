@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>LevCoin Full-Screen Missed Revenue</title>
+  <title>LevCoin Missed Profit</title>
   <style>
     /* Reset margins & padding so background can fill the screen */
     html, body {
@@ -14,9 +14,8 @@
       color: #fff; /* White text for contrast on darker images */
     }
 
-    /* Full-screen background image */
+    /* Full-screen background image (optional) */
     body {
-      /* If you want a different image, change the filename below or remove this line if no BG */
       background: url("levcoinphoto_2024-12-30_11-34-31.jpeg") no-repeat center center;
       background-size: cover;
       background-position: center;
@@ -41,6 +40,7 @@
     .overlay pre {
       white-space: pre-line;
       margin: 0;
+      font-size: 1.2rem;
     }
 
     /* Shake animation keyframes */
@@ -63,7 +63,6 @@
 
   <!-- Overlay container for text -->
   <div class="overlay">
-    <h1>Dev Rugged and Only Made $7</h1>
     <pre id="profit-message">Calculating missed revenue...</pre>
   </div>
 
@@ -72,7 +71,7 @@
     const devTokenAmount = 51100000;
     const devRugProceeds = 7;
 
-    // We'll fetch the price from this GeckoTerminal API endpoint
+    // GeckoTerminal API endpoint you provided
     const apiUrl = "https://api.geckoterminal.com/api/v2/simple/networks/sol/token_price/66BEASEApHs5LMFoQV8LTEZUavBKNSbgBy3TRpD9pump";
 
     // HTML elements
@@ -87,19 +86,15 @@
         }
         const data = await response.json();
 
-        // LOG the entire response so you can open the browser console
-        // (F12 -> "Console") and see EXACTLY what structure you get.
+        // Log the entire response to see the actual structure
         console.log("GeckoTerminal response:", data);
 
-        // Common structure: data.data.attributes.price_in_usd
-        // Adjust if the key is different in the actual JSON
+        // Check if data.data.attributes.price_in_usd is where the price is stored
         const priceStr = data?.data?.attributes?.price_in_usd;
-
         if (!priceStr) {
-          throw new Error("price_in_usd not found in the JSON structure.");
+          throw new Error("price_in_usd not found in JSON. Check console output for actual keys.");
         }
 
-        // Convert string to a number
         const priceInUsd = parseFloat(priceStr);
         if (isNaN(priceInUsd)) {
           throw new Error("price_in_usd is not a valid number.");
@@ -108,7 +103,7 @@
         return priceInUsd;
       } catch (error) {
         console.error("Failed to fetch LEVCOIN price:", error);
-        profitMessageEl.textContent = "Error fetching LEVCOIN price. Check console.";
+        profitMessageEl.textContent = "Error fetching LEVCOIN price. Try again later";
         return null;
       }
     }
@@ -117,31 +112,25 @@
       // Price * tokens = total potential value
       const totalValue = price * devTokenAmount;
       // Missed revenue = totalValue - devRugProceeds
-      const difference = totalValue - devRugProceeds;
-      return { totalValue, difference };
+      return totalValue - devRugProceeds;
     }
 
     async function updateDisplay() {
       const price = await fetchLevCoinPrice();
       if (price !== null) {
-        const { totalValue, difference } = calculateMissedRevenue(price);
+        // Calculate how much the dev *could* have made
+        const missedProfit = calculateMissedRevenue(price);
+        
+        // Two lines of text:
+        // 1) "Dev Rugged and Only Made $7"
+        // 2) "missed profit: $XXX"
+        profitMessageEl.textContent = `Dev Rugged and Only Made $7\nmissed profit: $${missedProfit.toLocaleString()}`;
 
-        // Build a multi-line message
-        const message = `
-LEVCOIN Current Price: $${price.toLocaleString(undefined, {minimumFractionDigits: 10})}
-Tokens Dev Had: ${devTokenAmount.toLocaleString()}
-He could have made: $${totalValue.toLocaleString()}
-But actually took: $${devRugProceeds}
-Missed Revenue: $${difference.toLocaleString()}
-        `;
-
-        profitMessageEl.textContent = message;
-
-        // Trigger a small shake animation on each update
+        // Trigger a small shake animation each update
         overlayEl.classList.add('shake');
         setTimeout(() => {
           overlayEl.classList.remove('shake');
-        }, 300); // same duration as the CSS animation
+        }, 300); // matches the CSS animation duration
       }
     }
 
