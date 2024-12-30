@@ -3,9 +3,86 @@
 <head>
   <meta charset="UTF-8" />
   <title>LEVCOIN</title>
+  <style>
+    body {
+      margin: 0; 
+      font-family: sans-serif; 
+      text-align: center; 
+      background: #f4f4f4; 
+      color: #333;
+      padding: 40px;
+    }
+    img {
+      max-width: 200px;
+      border-radius: 50%;
+    }
+    #profit-message {
+      margin-top: 20px;
+      font-size: 1.2rem;
+      background: #fff;
+      display: inline-block;
+      padding: 20px;
+      border-radius: 8px;
+    }
+  </style>
 </head>
-<body style="font-family: sans-serif; text-align:center; padding: 40px;">
-  <h1>He rugged us for $7. The rest is history.</h1>
-  <p></p>
+<body>
+  <h1>Dev Rugged and Only Made $7</h1>
+
+  <!-- Replace this placeholder with your dev's pic URL, or keep the placeholder for now -->
+  <img src="https://imgur.com/a/KloKvFi" alt="Dev who rugged" />
+
+  <div id="profit-message">Loading coin price...</div>
+
+  <script>
+    // Example: fetch the price of Shiba Inu from CoinGecko
+    const coinId = "shiba-inu";  
+    const devTokenAmount = 1000000;  // The dev "would have" had this many tokens
+    const devRugProceeds = 7;       // The dev only made $7
+    const displayEl = document.getElementById('profit-message');
+
+    async function fetchPrice() {
+      try {
+        const response = await fetch(
+          `https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd`
+        );
+        if (!response.ok) {
+          throw new Error(`Error fetching price: ${response.statusText}`);
+        }
+        const data = await response.json();
+        return data[coinId].usd;
+      } catch (err) {
+        console.error(err);
+        displayEl.textContent = "Error fetching price. Try again later.";
+        return null;
+      }
+    }
+
+    function calculateDifference(price) {
+      // how much they'd have if they didn't rug
+      const total = price * devTokenAmount;
+      return total - devRugProceeds;
+    }
+
+    async function updateDisplay() {
+      const price = await fetchPrice();
+      if (price !== null) {
+        const difference = calculateDifference(price);
+        displayEl.textContent = `
+          Current ${coinId} price: $${price.toFixed(8)}
+          \nIf the dev had kept ${devTokenAmount.toLocaleString()} tokens,
+          they'd have $${(price * devTokenAmount).toLocaleString()} right now.
+          \nInstead, they took $${devRugProceeds}.
+          \nThat's a difference of $${difference.toLocaleString()}!
+        `;
+      }
+    }
+
+    // Fetch immediately...
+    updateDisplay();
+    // ...and optionally refresh every 30 seconds
+    setInterval(updateDisplay, 30000);
+  </script>
 </body>
 </html>
+
