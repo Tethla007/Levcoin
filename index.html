@@ -69,8 +69,8 @@
 
   <script>
     // CoinGecko coin ID
-    const coinId = "shiba-inu";      // e.g. 'bitcoin', 'ethereum', etc.
-    const devTokenAmount = 1000000;  // tokens the dev "would have" had
+    const coinId = "LEVCOIN";      // e.g. 'bitcoin', 'ethereum', etc.
+    const devTokenAmount = 51,100,000;  // tokens the dev "would have" had
     const devRugProceeds = 7;        // the dev actually made $7
     const profitMessageEl = document.getElementById('profit-message');
     const overlayEl = document.querySelector('.overlay');
@@ -78,7 +78,7 @@
     async function fetchPrice() {
       try {
         const response = await fetch(
-          `https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd`
+          `https://api.geckoterminal.com/api/v2/simple/networks/sol/token_price/66BEASEApHs5LMFoQV8LTEZUavBKNSbgBy3TRpD9pump`
         );
         if (!response.ok) {
           throw new Error(`Error fetching price: ${response.status}`);
