@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Missed Revenue</title>
+  <title>LevCoin Missed Revenue</title>
   <style>
     /* Make the background fill the entire viewport */
     html, body {
@@ -14,12 +14,16 @@
       color: #fff;
     }
 
-    /* Full-screen background image */
+    /* Full-screen background image:
+       Make sure the JPEG file is in the same folder, spelled exactly!
+       If you have it in a subfolder, adjust the path accordingly (e.g., 'images/...'). */
     body {
-      background: url("levcoinphoto_2024-12-30_11-34-31.jpeg") no-repeat center center;
+      background: url("./levcoinphoto_2024-12-30_11-34-31.jpeg") no-repeat center center;
       background-size: cover;
       background-position: center;
       background-attachment: fixed;
+
+      /* Center children vertically & horizontally */
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -28,32 +32,19 @@
     }
 
     .overlay {
-      background-color: rgba(0, 0, 0, 0.5); /* semi-transparent black */
+      background-color: rgba(0, 0, 0, 0.5);
       padding: 30px 40px;
       border-radius: 10px;
       max-width: 500px;
+      /* Optional if you want it to align strictly in the center */
+      margin: 0 auto;
     }
-    
-    /* So line breaks in textContent show up nicely */
+
     .overlay pre {
       white-space: pre-line;
       margin: 0;
       font-size: 1.3rem;
     }
-
-    /* Optional: Shake animation if you want it to animate each refresh
-    @keyframes shake {
-      0%   { transform: translate(0, 0); }
-      20%  { transform: translate(-2px, 0); }
-      40%  { transform: translate(2px, 0); }
-      60%  { transform: translate(-2px, 0); }
-      80%  { transform: translate(2px, 0); }
-      100% { transform: translate(0, 0); }
-    }
-    .shake {
-      animation: shake 0.3s ease-in-out;
-    }
-    */
   </style>
 </head>
 <body>
@@ -63,16 +54,15 @@
   </div>
 
   <script>
-    // The dev had 51,100,000 tokens but only made $7
+    // The dev had 51,100,000 tokens, only made $7
     const devTokenAmount = 51_100_000;
     const devRugProceeds = 7;
 
-    // DexScreener endpoint (returns data for that Solana pair)
+    // DexScreener endpoint for your token pair on Solana
+    // Based on your comment, this endpoint "worked" for you:
     const dexUrl = "https://api.dexscreener.com/latest/dex/pairs/solana/66BEASEApHs5LMFoQV8LTEZUavBKNSbgBy3TRpD9pump";
 
-    // Get references
     const missedRevenueEl = document.getElementById("missed-revenue");
-    const overlayEl = document.getElementById("overlay");
 
     async function fetchPrice() {
       try {
@@ -83,17 +73,35 @@
         const data = await response.json();
         console.log("DexScreener response:", data);
 
-        // DexScreener's structure typically:
-        // {
-        //   "pair": {
-        //     "priceUsd": "0.0001234",
-        //     ...
-        //   }
-        // }
-        // Adjust if the key is different, e.g. data.pairs[0].priceUsd
-        const priceUsd = data?.pair?.priceUsd;
+        /* 
+          Check the actual structure in your console (F12 -> Console).
+          DexScreener often returns something like:
+            {
+              "pairs": [
+                {
+                  "priceUsd": "0.00001234",
+                  ...
+                }
+              ]
+            }
+          OR it might return:
+            {
+              "pair": {
+                "priceUsd": "0.00001234",
+                ...
+              }
+            }
+
+          If it's in data.pairs[0].priceUsd, use that. If it's in data.pair.priceUsd, use that.
+        */
+
+        // Try "pairs" first:
+        const priceUsd = data?.pairs?.[0]?.priceUsd
+          // fallback if not found in pairs:
+          || data?.pair?.priceUsd;
+
         if (!priceUsd) {
-          throw new Error("priceUsd not found in DexScreener response.");
+          throw new Error("priceUsd not found in DexScreener response. Check console log for structure!");
         }
 
         return parseFloat(priceUsd);
@@ -115,19 +123,10 @@
       const price = await fetchPrice();
       if (price !== null) {
         const missed = calculateMissedRevenue(price);
-        // We'll only show missed revenue, plus a quick mention
-        // "Dev Rugged for $7" / "missed profit: $X"
+        // Show dev's $7 and the missed profit
         missedRevenueEl.textContent =
           `Dev Rugged and Only Made $${devRugProceeds}\n` +
           `missed profit: $${missed.toLocaleString()}`;
-
-        // If you want a shake animation each time it updates, uncomment the code below:
-        /*
-        overlayEl.classList.add('shake');
-        setTimeout(() => {
-          overlayEl.classList.remove('shake');
-        }, 300);
-        */
       }
     }
 
