@@ -35,7 +35,6 @@
       border-radius: 10px;
       max-width: 600px;
       margin: 20px;
-      /* We'll apply the shake animation to this element each update */
     }
 
     /* We want line breaks in textContent to render nicely */
@@ -74,7 +73,6 @@
     const devRugProceeds = 7;
 
     // We'll fetch the price from this GeckoTerminal API endpoint
-    // (You said: https://api.geckoterminal.com/api/v2/simple/networks/sol/token_price/66BEASEApHs5LMFoQV8LTEZUavBKNSbgBy3TRpD9pump )
     const apiUrl = "https://api.geckoterminal.com/api/v2/simple/networks/sol/token_price/66BEASEApHs5LMFoQV8LTEZUavBKNSbgBy3TRpD9pump";
 
     // HTML elements
@@ -89,29 +87,28 @@
         }
         const data = await response.json();
 
-        // Check the structure of the returned JSON:
-        // Example might be: { data: { price_in_usd: 0.0000123, ... } }
-        // Adjust if needed once you know the exact JSON key for the price
-        // We'll guess it's something like data.data.price_in_usd or data.data.price
-        // Inspect the JSON to confirm the exact path.
+        // LOG the entire response so you can open the browser console
+        // (F12 -> "Console") and see EXACTLY what structure you get.
+        console.log("GeckoTerminal response:", data);
 
-        // For example, if the JSON is:
-        // {
-        //   "data": {
-        //     "price": "0.00012345"
-        //   }
-        // }
-        // then priceInUsd would be data.data.price
-        // If it’s "price_in_usd", adjust accordingly.
+        // Common structure: data.data.attributes.price_in_usd
+        // Adjust if the key is different in the actual JSON
+        const priceStr = data?.data?.attributes?.price_in_usd;
 
-        // Let's guess the field is "price_in_usd" or "price":
-        // (Check your browser console to see the actual structure if uncertain)
-        const priceInUsd = data?.data?.price_in_usd || data?.data?.price || 0;
+        if (!priceStr) {
+          throw new Error("price_in_usd not found in the JSON structure.");
+        }
 
-        return parseFloat(priceInUsd);
+        // Convert string to a number
+        const priceInUsd = parseFloat(priceStr);
+        if (isNaN(priceInUsd)) {
+          throw new Error("price_in_usd is not a valid number.");
+        }
+
+        return priceInUsd;
       } catch (error) {
-        console.error(error);
-        profitMessageEl.textContent = "Error fetching LEVCOIN price. Try again later.";
+        console.error("Failed to fetch LEVCOIN price:", error);
+        profitMessageEl.textContent = "Error fetching LEVCOIN price. Check console.";
         return null;
       }
     }
