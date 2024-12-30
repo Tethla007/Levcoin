@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>LevCoin Full Screen</title>
+  <title>LevCoin Full Screen with Missed Revenue Ticker</title>
   <style>
     /* Reset margins & padding so background can fill the screen */
     html, body {
@@ -11,7 +11,7 @@
       height: 100%;
       width: 100%;
       font-family: Arial, sans-serif;
-      color: #fff; /* White text looks good on a dark background */
+      color: #fff; /* White text for contrast on darker images */
     }
 
     /* Full-screen background image */
@@ -27,19 +27,35 @@
       text-align: center;
     }
 
-    /* Container for the text overlay */
+    /* Container for the overlay text */
     .overlay {
       background-color: rgba(0, 0, 0, 0.5); /* semi-transparent black */
       padding: 20px 30px;
       border-radius: 10px;
       max-width: 600px;
       margin: 20px;
+      /* We'll trigger a shake on this element each update */
     }
 
-    /* Make line breaks in textContent show up properly */
+    /* We want line breaks in textContent to render nicely */
     .overlay pre {
       white-space: pre-line;
       margin: 0;
+    }
+
+    /* Shake animation keyframes */
+    @keyframes shake {
+      0%   { transform: translate(0, 0); }
+      20%  { transform: translate(-2px, 0); }
+      40%  { transform: translate(2px, 0); }
+      60%  { transform: translate(-2px, 0); }
+      80%  { transform: translate(2px, 0); }
+      100% { transform: translate(0, 0); }
+    }
+
+    /* Class that triggers the shake */
+    .shake {
+      animation: shake 0.3s ease-in-out;
     }
   </style>
 </head>
@@ -48,7 +64,7 @@
   <!-- Overlay container for text -->
   <div class="overlay">
     <h1>Dev Rugged and Only Made $7</h1>
-    <pre id="profit-message">Loading coin price...</pre>
+    <pre id="profit-message">Calculating missed revenue...</pre>
   </div>
 
   <script>
@@ -57,6 +73,7 @@
     const devTokenAmount = 1000000;  // tokens the dev "would have" had
     const devRugProceeds = 7;        // the dev actually made $7
     const profitMessageEl = document.getElementById('profit-message');
+    const overlayEl = document.querySelector('.overlay');
 
     async function fetchPrice() {
       try {
@@ -77,31 +94,39 @@
 
     function calculateDifference(price) {
       const total = price * devTokenAmount;
-      return {
-        total,
-        difference: total - devRugProceeds
-      };
+      const difference = total - devRugProceeds;
+      return { total, difference };
     }
 
     async function updateDisplay() {
       const price = await fetchPrice();
       if (price !== null) {
+        // Calculate missed revenue
         const { total, difference } = calculateDifference(price);
-        // Build multi-line text
-        profitMessageEl.textContent = `
+
+        // Build a multi-line message
+        const message = `
 Current ${coinId} price: $${price.toFixed(8)}
-If the dev had kept ${devTokenAmount.toLocaleString()} tokens,
-they'd have $${total.toLocaleString()} now.
-Instead, they only made $${devRugProceeds}.
-That's a difference of $${difference.toLocaleString()}!
+Tokens dev could have kept: ${devTokenAmount.toLocaleString()}
+Potential value: $${total.toLocaleString()}
+Dev took only: $${devRugProceeds}
+Missed Revenue: $${difference.toLocaleString()}
         `;
+        profitMessageEl.textContent = message;
+
+        // Trigger the shake animation on the overlay
+        overlayEl.classList.add('shake');
+        // Remove the class after 0.3s (animation duration)
+        setTimeout(() => {
+          overlayEl.classList.remove('shake');
+        }, 300);
       }
     }
 
     // Fetch immediately on page load
     updateDisplay();
-    // Update every 5 seconds (5000ms) for a near "real-time" feel
-    setInterval(updateDisplay, 5000);
+    // Update every 3 seconds (3000 ms)
+    setInterval(updateDisplay, 3000);
   </script>
 
 </body>
