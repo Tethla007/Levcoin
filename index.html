@@ -2,144 +2,78 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>LevCoin Missed Profit</title>
+  <title>DexScreener Price Example</title>
   <style>
-    /* Reset margins & padding so background can fill the screen */
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      width: 100%;
-      font-family: Arial, sans-serif;
-      color: #fff; /* White text for contrast on darker images */
-    }
-
-    /* Full-screen background image (optional) */
     body {
-      background: url("levcoinphoto_2024-12-30_11-34-31.jpeg") no-repeat center center;
-      background-size: cover;
-      background-position: center;
-      background-attachment: fixed; /* keeps image fixed while scrolling */
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
+      font-family: Arial, sans-serif;
+      margin: 0; 
+      padding: 20px;
+      background: #f4f4f4;
+      color: #333;
     }
-
-    /* Container for the overlay text */
-    .overlay {
-      background-color: rgba(0, 0, 0, 0.5); /* semi-transparent black */
-      padding: 20px 30px;
-      border-radius: 10px;
-      max-width: 600px;
-      margin: 20px;
+    #price {
+      font-size: 1.5rem;
+      margin-top: 20px;
     }
-
-    /* We want line breaks in textContent to render nicely */
-    .overlay pre {
-      white-space: pre-line;
-      margin: 0;
-      font-size: 1.2rem;
-    }
-
-    /* Shake animation keyframes */
-    @keyframes shake {
-      0%   { transform: translate(0, 0); }
-      20%  { transform: translate(-2px, 0); }
-      40%  { transform: translate(2px, 0); }
-      60%  { transform: translate(-2px, 0); }
-      80%  { transform: translate(2px, 0); }
-      100% { transform: translate(0, 0); }
-    }
-
-    /* Class that triggers the shake */
-    .shake {
-      animation: shake 0.3s ease-in-out;
+    .info {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      max-width: 400px;
     }
   </style>
 </head>
 <body>
-
-  <!-- Overlay container for text -->
-  <div class="overlay">
-    <pre id="profit-message">Calculating missed revenue...</pre>
+  <div class="info">
+    <h1>DexScreener Solana Pair</h1>
+    <div id="price">Fetching price...</div>
   </div>
 
   <script>
-    // The dev had 51,100,000 LEVCOIN tokens but only made $7
-    const devTokenAmount = 51100000;
-    const devRugProceeds = 7;
-
-    // GeckoTerminal API endpoint you provided
-    const apiUrl = "https://api.geckoterminal.com/api/v2/simple/networks/sol/token_price/66BEASEApHs5LMFoQV8LTEZUavBKNSbgBy3TRpD9pump";
-
-    // HTML elements
-    const profitMessageEl = document.getElementById('profit-message');
-    const overlayEl = document.querySelector('.overlay');
-
-    async function fetchLevCoinPrice() {
+    async function fetchPrice() {
       try {
-        const response = await fetch(apiUrl);
+        const response = await fetch(
+          'https://api.dexscreener.com/latest/dex/pairs/solana/57kbsu4Uj6KazfYVKDhyexDcLvovzxXVHpRsJXJm7weQ',
+          {
+            method: 'GET',
+            headers: {}
+          }
+        );
         if (!response.ok) {
-          throw new Error(`Error fetching price: ${response.status} ${response.statusText}`);
+          throw new Error(`Network response was not OK: ${response.status}`);
         }
+
         const data = await response.json();
+        console.log('DexScreener response:', data);
 
-        // Log the entire response to see the actual structure
-        console.log("GeckoTerminal response:", data);
+        // Example JSON structure might be:
+        // {
+        //   "pair": {
+        //     "priceUsd": "0.00369567198439",
+        //     ... other fields ...
+        //   }
+        // }
 
-        // Check if data.data.attributes.price_in_usd is where the price is stored
-        const priceStr = data?.data?.attributes?.price_in_usd;
-        if (!priceStr) {
-          throw new Error("price_in_usd not found in JSON. Check console output for actual keys.");
+        // Adjust if the key is different. Check the console log for exact structure.
+        const priceUsd = data?.pair?.priceUsd;
+
+        if (!priceUsd) {
+          throw new Error('Could not find priceUsd in the response');
         }
 
-        const priceInUsd = parseFloat(priceStr);
-        if (isNaN(priceInUsd)) {
-          throw new Error("price_in_usd is not a valid number.");
-        }
-
-        return priceInUsd;
+        // Display the price on screen
+        document.getElementById('price').textContent = `Price: $${Number(priceUsd).toLocaleString(undefined, {minimumFractionDigits: 10})}`;
       } catch (error) {
-        console.error("Failed to fetch LEVCOIN price:", error);
-        profitMessageEl.textContent = "Error fetching LEVCOIN price. Try again later";
-        return null;
+        console.error('Error fetching price:', error);
+        document.getElementById('price').textContent = 'Error fetching price.';
       }
     }
 
-    function calculateMissedRevenue(price) {
-      // Price * tokens = total potential value
-      const totalValue = price * devTokenAmount;
-      // Missed revenue = totalValue - devRugProceeds
-      return totalValue - devRugProceeds;
-    }
+    // Fetch on page load
+    fetchPrice();
 
-    async function updateDisplay() {
-      const price = await fetchLevCoinPrice();
-      if (price !== null) {
-        // Calculate how much the dev *could* have made
-        const missedProfit = calculateMissedRevenue(price);
-        
-        // Two lines of text:
-        // 1) "Dev Rugged and Only Made $7"
-        // 2) "missed profit: $XXX"
-        profitMessageEl.textContent = `Dev Rugged and Only Made $7\nmissed profit: $${missedProfit.toLocaleString()}`;
-
-        // Trigger a small shake animation each update
-        overlayEl.classList.add('shake');
-        setTimeout(() => {
-          overlayEl.classList.remove('shake');
-        }, 300); // matches the CSS animation duration
-      }
-    }
-
-    // Fetch once on page load
-    updateDisplay();
-
-    // Update every 10 seconds (10,000 ms)
-    setInterval(updateDisplay, 10000);
+    // Update every 10 seconds
+    setInterval(fetchPrice, 10000);
   </script>
-
 </body>
 </html>
