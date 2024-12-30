@@ -4,88 +4,105 @@
   <meta charset="UTF-8" />
   <title>LevCoin Full Screen</title>
   <style>
+    /* Reset margins & padding so background can fill the screen */
     html, body {
-      margin: 0; 
-      padding: 0; 
+      margin: 0;
+      padding: 0;
       height: 100%;
+      width: 100%;
+      font-family: Arial, sans-serif;
+      color: #fff; /* White text looks good on a dark background */
     }
+
+    /* Full-screen background image */
     body {
       background: url("levcoinphoto_2024-12-30_11-34-31.jpeg") no-repeat center center;
       background-size: cover;
-      font-family: sans-serif;
-      color: #fff; /* White text for contrast on dark images */
+      background-position: center;
+      background-attachment: fixed; /* keeps image fixed while scrolling */
       display: flex;
-      align-items: center;       /* Vertically center content */
-      justify-content: center;   /* Horizontally center content */
-      flex-direction: column;    /* Stack text vertically */
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
     }
-    h1 {
-      margin: 0 0 20px 0;
-      font-size: 2rem;
-      background: rgba(0, 0, 0, 0.5); /* Transparent black backdrop */
-      padding: 10px 20px;
-      border-radius: 8px;
+
+    /* Container for the text overlay */
+    .overlay {
+      background-color: rgba(0, 0, 0, 0.5); /* semi-transparent black */
+      padding: 20px 30px;
+      border-radius: 10px;
+      max-width: 600px;
+      margin: 20px;
     }
-    #profit-message {
-      font-size: 1.2rem;
-      background: rgba(0, 0, 0, 0.5);
-      padding: 10px 20px;
-      border-radius: 8px;
+
+    /* Make line breaks in textContent show up properly */
+    .overlay pre {
       white-space: pre-line;
+      margin: 0;
     }
   </style>
 </head>
 <body>
 
-  <h1>Dev Rugged and Only Made $7</h1>
-
-  <div id="profit-message">Loading coin price...</div>
+  <!-- Overlay container for text -->
+  <div class="overlay">
+    <h1>Dev Rugged and Only Made $7</h1>
+    <pre id="profit-message">Loading coin price...</pre>
+  </div>
 
   <script>
-    // Example coin
-    const coinId = "shiba-inu";
-    const devTokenAmount = 1000000;
-    const devRugProceeds = 7;
-    const displayEl = document.getElementById('profit-message');
+    // CoinGecko coin ID
+    const coinId = "shiba-inu";      // e.g. 'bitcoin', 'ethereum', etc.
+    const devTokenAmount = 1000000;  // tokens the dev "would have" had
+    const devRugProceeds = 7;        // the dev actually made $7
+    const profitMessageEl = document.getElementById('profit-message');
 
     async function fetchPrice() {
       try {
-        const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd`);
+        const response = await fetch(
+          `https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd`
+        );
         if (!response.ok) {
-          throw new Error(`Error: ${response.status}`);
+          throw new Error(`Error fetching price: ${response.status}`);
         }
         const data = await response.json();
         return data[coinId].usd;
       } catch (error) {
         console.error(error);
-        displayEl.textContent = "Error fetching price.";
+        profitMessageEl.textContent = "Error fetching price. Try again later.";
         return null;
       }
     }
 
     function calculateDifference(price) {
       const total = price * devTokenAmount;
-      return total - devRugProceeds;
+      return {
+        total,
+        difference: total - devRugProceeds
+      };
     }
 
     async function updateDisplay() {
       const price = await fetchPrice();
       if (price !== null) {
-        const difference = calculateDifference(price);
-        displayEl.textContent = `
+        const { total, difference } = calculateDifference(price);
+        // Build multi-line text
+        profitMessageEl.textContent = `
 Current ${coinId} price: $${price.toFixed(8)}
-If the dev had ${devTokenAmount.toLocaleString()} tokens,
-they'd have $${(price * devTokenAmount).toLocaleString()} now.
-Instead, they made only $${devRugProceeds}.
-Difference: $${difference.toLocaleString()}!
+If the dev had kept ${devTokenAmount.toLocaleString()} tokens,
+they'd have $${total.toLocaleString()} now.
+Instead, they only made $${devRugProceeds}.
+That's a difference of $${difference.toLocaleString()}!
         `;
       }
     }
 
-    // Fetch immediately on load
+    // Fetch immediately on page load
     updateDisplay();
-    // Update every 5 seconds (set to 5000 ms)
+    // Update every 5 seconds (5000ms) for a near "real-time" feel
     setInterval(updateDisplay, 5000);
   </script>
+
 </body>
 </html>
